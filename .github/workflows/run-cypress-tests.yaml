@@ -39,7 +39,7 @@ jobs:
     - run: npm run build --if-present
 
       #start the app (lumiashop)
-    - nohup npm start &  
+    - run: nohup npm start &  
       # run whatever is specified in package.json
       # for the script test
     - run: npm test
