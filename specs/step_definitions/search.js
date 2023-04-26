@@ -5,7 +5,7 @@ Given('that I am on the start page', () => {
   cy.visit('/');
 });
 
-When('I enter the letter {string} in the search field', (letter) => {
+When('I enter the string {string} in the searchfield', (letter) => {
   // Type the letter from our feature file in the search field
   cy.get('#search').type(letter);
 });
