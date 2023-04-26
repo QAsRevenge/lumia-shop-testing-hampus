@@ -1,45 +1,80 @@
-name: Node.js CI
+name: test and deploy
 
-# Trigger which git action (push, pull_request)
-# in which branch(es) should start the jobs...
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
-# jobs to run
 jobs:
-  # build, the name of the job, a server to create and auto configure
-  build:
-
+  # job 1: tests
+  tests:
     runs-on: ubuntu-latest
 
     strategy:
-      # only testing on Node 18 now but could have done
-      # several builds by adding [16.x, 18.x] etc
+      # testing on Node 16t and 18
       matrix:
         node-version: [16.x, 18.x]
 
     steps:
       # action from github marketplace, actions
       # checkout this repo on the server
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      # action from github marketplace, actions
-      # install Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-      # npm ci ≈ read-only from package.json version
-      # of npm install -> installs all npm modules
-      # mentioned in package.json, preferably during CI
-    - run: npm ci
-      # if the project has a npm run build command
-      # then runs (not needed right now but keep)
-    - run: npm run build --if-present
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        # action from github marketplace, actions
+        # install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+        # npm ci ≈ read-only from package.json version
+        # of npm install -> installs all npm modules
+        # mentioned in package.json, preferably during CI
+      - run: npm ci
+        # if the project has a npm run build command
+        # then runs (not needed right now but keep)
+      - run: npm run build --if-present
+        # start the server
+      - run: nohup npm start &
+        # run whatever is specified in package.json
+        # for the script test
+      - run: npm test
 
-      #start the app (lumiashop)
-    - run: nohup npm start &  
-      # run whatever is specified in package.json
-      # for the script test
-    - run: npm test
+  deploy:
+    # demand that the  test job succeed
+    # before running deploy
+    needs: [tests]
+
+    # only run this job if the environment protection rules
+    # (a reviewers approves and we are on the dev branch)
+    # are fulfilled
+    # TO BE CHECKED BY THOMAS:
+    # FOR NOW DEPLOY AUTOMATICALLY
+    # environment: Main deploy
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: executing remote ssh commands using password
+        # using ssh-action from appleboy
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          # using repository secrets
+          # for login to your server
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          # commands to run on your server
+          # below just an example
+          # can be more (like restarting pm2)
+          script: |
+            echo "cd to correct folder"
+            cd /var/www/lumia-shop-testing-hampus
+            echo "git pull"
+            git pull
+            echo "npm install"
+            npm install
+            echo "running build if present"
+            npm run build --if-present
+            echo "restarting app in pm2"
+            pm2 restart lumia
