@@ -28,7 +28,7 @@ Then('{string} {string} should add to the cart', (quantity, productName) => {
     .contains(productName)
     // and also contains the correct quantity
     .contains(quantity + 'st')
-    // we should 1 element
+    // we should have 1 element
     .should('have.length', quantity);
 });
 
