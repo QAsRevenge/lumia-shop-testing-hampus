@@ -32,3 +32,17 @@ Feature: Check that total is correct in cart with one or more of the same item
     When I click the buy button "1" time
     Then "1" "Lampett" should be added to the cart
     And total should be "4000"
+
+  #Scenariou outline just for fun
+  Scenario Outline: Adding "<quantity>" "<product>" to the cart
+    Given that I have searched for "<product>"
+    When I click the buy button "<quantity>" time
+    Then "<quantity>" "<product>" should be added to the cart
+    And total should be "<total>"
+
+    Examples:
+      | product    | quantity | total |
+      | Bordslampa | 1        | 6900  |
+      | Bordslampa | 2        | 13800 |
+      | Golvlampa  | 1        | 1780  |
+      | Golvlampa  | 3        | 5340  |
